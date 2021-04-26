@@ -7,10 +7,10 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const ParkingLot = require('./controller')
 const router = express.Router()
-mongoose.connect(mongoUrl, { useNewUrlParser: true })
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
 const db = mongoose.connection
 db.on('error', (error) => console.error(error))
-db.once('open', () => console.log('connected to database'))
+db.once('open', () => '')
 const storey = ['A1', 'A2', 'A3', 'B1', 'B2', 'B3']
 const parking = new ParkingLot()
 router.use(bodyParser.urlencoded({ extended: false }))
@@ -28,7 +28,7 @@ router.put('/add', async (req, res, next) => {
       response.data += `${returnValue.data} `
     }
   } else {
-    response = await updateVehicleSlot(req)
+    response = await parking.updateVehicleSlot(req)
   }
   res.json(response)
   next()
@@ -88,7 +88,7 @@ router.put('/exit', async (req, res, next) => {
       response.data += `${returnValue.data} `
     }
   } else {
-    response = await updateVehicleSlot(req)
+    response = await parking.updateVehicleSlot(req)
   }
   response.cost = cost
   res.json(response)
@@ -108,14 +108,13 @@ router.get('/searchSlot', async (req, res, next) => {
   for (let i = 0; i < storey.length; i++) {
     const carSlots = []
     response = await slotData.find(
-      { type: vehicleType, status: req.query.status, storey: storey[i] },
-      {},
-      {
-      upsert: true
+      { 
+        type: vehicleType, status: req.query.status, storey: storey[i] 
       }).then(result => {
           if ((vehicleType === 'car' || vehicleType === 'bike') && req.query.status === 'free' && _.isNull(result)) {
               return {
-                message: 'Parking is full. Please wait for sometime'
+                message: 'Parking is full. Please wait for sometime',
+                data: 0
               }
           } else {
             if (req.query.type === 'car' || req.query.type === 'bike') {
@@ -130,22 +129,13 @@ router.get('/searchSlot', async (req, res, next) => {
                 busSlot[value.storey] = carSlots
               })
               for (let [slotName, slotArray] of Object.entries(busSlot)) {
-                let isConsecutive = []
-                console.log(slotName)
-                console.log(slotArray.length)
-                if (slotArray.length > 3) {
-                  isConsecutive = parking.areConsecutive(slotArray)
-                  if (isConsecutive.length > 0) {
-                    for (let j = 0; j < isConsecutive.length; j++) {
-                      if (isConsecutive[j].length > 3) {
-                        console.log(isConsecutive[j])
-                        // return {
-                        //   message: "Slot found for the vehicle",
-                        //   data: `${slotName} - ${slotArray.slice(0,2)}`
-                        // }
-                      } else {
-
-                      }
+                let isConsecutive
+                if (slotArray.length >= 2) {
+                  isConsecutive = parking.areConsecutive(slotArray.sort())
+                  if (isConsecutive.length >= 3) {
+                    return {
+                      message: "Slot found for the vehicle",
+                      data: `${slotName} - ${(isConsecutive.slice(0,3))[0]}, ${(isConsecutive.slice(0,3))[1]}, ${(isConsecutive.slice(0,3))[2]}`
                     }
                   }
                 }
@@ -154,13 +144,17 @@ router.get('/searchSlot', async (req, res, next) => {
           }
     })
     .catch(error => {
-          console.error(error)
           return {
             message: `${error}`
           }
       })
   }
-  console.log(response)
+  if (_.isUndefined(response)) {
+    response = {
+                message: 'Parking is full. Please wait for sometime',
+                data: 0
+              }
+  }
   res.json(response)
   next()
 })  

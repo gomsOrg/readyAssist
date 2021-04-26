@@ -35,6 +35,14 @@ curl --location --request PUT 'http://localhost:3000/exit' \
     "slot": "2",
     "storey": "A1"
 }'
+Exit parking slot for bus:
+curl --location --request PUT 'http://localhost:3000/exit' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "slot": "2",
+    "storey": "A1",
+    "vehicle": "bus"
+}'
 
 # Sample data to import and test the API's from MongoDB
 parkinglot.json has the sample data for testing. It can be used to import data into the Mongo DB collection called slotDatas (as per the modal name). 
