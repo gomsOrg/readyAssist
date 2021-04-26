@@ -1,3 +1,3 @@
-const mongoUrl = 'mongodb://localhost:27017/readyassits'
+const mongoUrl = 'mongodb://localhost:27017/readyassist'
 
 exports.mongoUrl = mongoUrl
