@@ -35,6 +35,7 @@ curl --location --request PUT 'http://localhost:3000/exit' \
     "slot": "2",
     "storey": "A1"
 }'
+
 Exit parking slot for bus:
 curl --location --request PUT 'http://localhost:3000/exit' \
 --header 'Content-Type: application/json' \
